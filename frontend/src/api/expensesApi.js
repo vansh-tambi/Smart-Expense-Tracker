@@ -1,34 +1,35 @@
+import axios from "axios";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
-async function request(path, options = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  let json = null;
-  try {
-    json = await res.json();
-  } catch {
-    json = null;
-  }
+const client = axios.create({
+  baseURL: BASE_URL,
+  headers: { "Content-Type": "application/json" },
+});
 
-  if (!res.ok) {
-    const msg =
-      json?.details?.map((d) => d.message).join(", ") ||
-      json?.error ||
-      json?.message ||
-      "Request failed";
-    throw new Error(msg);
+client.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (error.response?.data) {
+      const { details, error: errorMsg, message } = error.response.data;
+      const msg =
+        details?.map((d) => d.message).join(", ") ||
+        errorMsg ||
+        message ||
+        "Request failed";
+      throw new Error(msg);
+    }
+    throw error;
   }
+);
 
-  return json || {};
-}
+
+
 
 export const expensesApi = {
-  getAll: () => request("/expenses/"),
-  create: (data) =>
-    request("/expenses/", { method: "POST", body: JSON.stringify(data) }),
-  delete: (id) => request(`/expenses/${id}`, { method: "DELETE" }),
-  getSummary: () => request("/expenses/summary"),
-  getInsights: () => request("/expenses/insights"),
+  getAll: () => client.get("/expenses/"),
+  create: (data) => client.post("/expenses/", data),
+  delete: (id) => client.delete(`/expenses/${id}`),
+  getSummary: () => client.get("/expenses/summary"),
+  getInsights: () => client.get("/expenses/insights"),
 };
