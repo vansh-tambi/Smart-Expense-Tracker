@@ -5,20 +5,24 @@ Tests business logic for expense CRUD operations.
 import pytest
 from datetime import datetime
 from bson import ObjectId
-from services import expense_service
+from mongomock import MongoClient
 
 
 class TestCreateExpense:
     """Test expense creation logic."""
 
-    def test_create_valid_expense(self, mock_mongo):
+    def test_create_valid_expense(self, monkeypatch):
         """Test creating a valid expense."""
         # Setup mocked database
+        mock_mongo = MongoClient()
         db = mock_mongo["test_smart_expense_tracker"]
         
         # Monkeypatch get_expenses_collection
         import models.db
         models.db._db = db
+        models.db._collection_ready = False
+        
+        from services import expense_service
         
         data = {
             "amount": 25.50,
@@ -36,9 +40,10 @@ class TestCreateExpense:
         assert "id" in result
         assert "created_at" in result
 
-    def test_create_expense_rejects_zero_amount(self, mock_mongo):
+    def test_create_expense_rejects_zero_amount(self):
         """Test that zero amount is rejected even in service."""
         from pydantic import ValidationError
+        from services import expense_service
         
         data = {
             "amount": 0,
@@ -48,9 +53,10 @@ class TestCreateExpense:
         with pytest.raises(ValidationError):
             expense_service.create_expense(data)
 
-    def test_create_expense_rejects_negative_amount(self, mock_mongo):
+    def test_create_expense_rejects_negative_amount(self):
         """Test that negative amount is rejected."""
         from pydantic import ValidationError
+        from services import expense_service
         
         data = {
             "amount": -10.00,
@@ -60,9 +66,10 @@ class TestCreateExpense:
         with pytest.raises(ValidationError):
             expense_service.create_expense(data)
 
-    def test_create_expense_rejects_invalid_category(self, mock_mongo):
+    def test_create_expense_rejects_invalid_category(self):
         """Test that invalid category is rejected."""
         from pydantic import ValidationError
+        from services import expense_service
         
         data = {
             "amount": 25.00,
@@ -76,20 +83,30 @@ class TestCreateExpense:
 class TestGetAllExpenses:
     """Test retrieving all expenses."""
 
-    def test_get_all_expenses_empty(self, mock_mongo):
+    def test_get_all_expenses_empty(self):
         """Test getting expenses when collection is empty."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
-        models.db._db = db
         
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
+        models.db._db = db
+        models.db._collection_ready = False
+        
+        from services import expense_service
         expenses = expense_service.get_all_expenses()
         assert expenses == []
 
-    def test_get_all_expenses_sorted_by_date(self, mock_mongo):
+    def test_get_all_expenses_sorted_by_date(self):
         """Test that expenses are sorted by date descending."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         # Insert unsorted expenses
         db.expenses.insert_many([
@@ -106,11 +123,16 @@ class TestGetAllExpenses:
         assert expenses[1]["date"] == "2024-04-15"
         assert expenses[2]["date"] == "2024-04-10"
 
-    def test_get_all_expenses_serialize_id(self, mock_mongo):
+    def test_get_all_expenses_serialize_id(self):
         """Test that MongoDB _id is converted to string 'id' field."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         db.expenses.insert_one({
             "amount": 25.00,
@@ -131,20 +153,30 @@ class TestGetAllExpenses:
 class TestGetCategorySummary:
     """Test category-wise spending summary."""
 
-    def test_category_summary_empty(self, mock_mongo):
+    def test_category_summary_empty(self):
         """Test summary when no expenses exist."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         summary = expense_service.get_category_summary()
         assert summary == []
 
-    def test_category_summary_single_expense(self, mock_mongo):
+    def test_category_summary_single_expense(self):
         """Test summary with a single expense."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         db.expenses.insert_one({
             "amount": 25.50,
@@ -161,11 +193,16 @@ class TestGetCategorySummary:
         assert summary[0]["total"] == 25.50
         assert summary[0]["count"] == 1
 
-    def test_category_summary_multiple_categories(self, mock_mongo):
+    def test_category_summary_multiple_categories(self):
         """Test summary with multiple categories."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         db.expenses.insert_many([
             {"amount": 25.00, "category": "Food", "date": "2024-04-15", "note": "", "created_at": datetime.now()},
@@ -185,11 +222,16 @@ class TestGetCategorySummary:
         assert summary[2]["category"] == "Shopping"
         assert summary[2]["total"] == 50.00
 
-    def test_category_summary_aggregates_count(self, mock_mongo):
+    def test_category_summary_aggregates_count(self):
         """Test that count is aggregated correctly."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         db.expenses.insert_many([
             {"amount": 10.00, "category": "Food", "date": "2024-04-15", "note": "", "created_at": datetime.now()},
@@ -203,11 +245,16 @@ class TestGetCategorySummary:
         assert summary[0]["total"] == 45.00
         assert summary[0]["count"] == 3
 
-    def test_category_summary_sorted_by_total(self, mock_mongo):
+    def test_category_summary_sorted_by_total(self):
         """Test that summary is sorted by total descending."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         db.expenses.insert_many([
             {"amount": 5.00, "category": "Food", "date": "2024-04-15", "note": "", "created_at": datetime.now()},
@@ -225,11 +272,16 @@ class TestGetCategorySummary:
 class TestDeleteExpense:
     """Test expense deletion logic."""
 
-    def test_delete_existing_expense(self, mock_mongo):
+    def test_delete_existing_expense(self):
         """Test deleting an existing expense."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         doc_id = ObjectId()
         db.expenses.insert_one({
@@ -250,22 +302,32 @@ class TestDeleteExpense:
         # Verify it's actually deleted
         assert db.expenses.find_one({"_id": doc_id}) is None
 
-    def test_delete_nonexistent_expense(self, mock_mongo):
+    def test_delete_nonexistent_expense(self):
         """Test deleting an expense that doesn't exist."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         fake_id = str(ObjectId())
         deleted = expense_service.delete_expense(fake_id)
         
         assert deleted is None
 
-    def test_delete_invalid_id_format(self, mock_mongo):
+    def test_delete_invalid_id_format(self):
         """Test deleting with invalid ObjectId format."""
-        db = mock_mongo["test_smart_expense_tracker"]
+        from mongomock import MongoClient
         import models.db
+        from services import expense_service
+        
+        mock_mongo = MongoClient()
+        db = mock_mongo["test_smart_expense_tracker"]
         models.db._db = db
+        models.db._collection_ready = False
         
         deleted = expense_service.delete_expense("not-a-valid-id")
         

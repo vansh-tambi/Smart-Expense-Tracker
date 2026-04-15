@@ -4,8 +4,6 @@ Pytest configuration and fixtures for Smart Expense Tracker.
 import os
 import pytest
 from mongomock import MongoClient
-from app import create_app
-from models.db import get_db
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,12 +29,14 @@ def client(mock_mongo, monkeypatch):
     def mock_get_db():
         return mock_mongo["test_smart_expense_tracker"]
 
-    # Patch the module-level get_db function
+    # Patch the module-level get_db function BEFORE importing app
     import models.db
     original_get_db = models.db.get_db
     models.db.get_db = mock_get_db
+    models.db._collection_ready = False
 
-    # Create Flask app
+    # Create Flask app AFTER patching
+    from app import create_app
     app = create_app()
     app.config["TESTING"] = True
 
