@@ -19,12 +19,14 @@ class ExpenseCreateSchema(BaseModel):
     amount: float = Field(..., gt=0, description="Amount must be greater than 0")
     category: str = Field(..., min_length=1, description="Category is required")
     date: Optional[str] = None  # ISO date string, defaults to today
-    note: Optional[str] = ""
+    note: Optional[str] = Field("", max_length=500)
 
     @field_validator("category")
     @classmethod
     def validate_category(cls, v: str) -> str:
         v = v.strip()
+        if not v:
+            raise ValueError("Category cannot be empty")
         if v not in VALID_CATEGORIES:
             raise ValueError(
                 f"Category must be one of: {', '.join(VALID_CATEGORIES)}"
@@ -42,9 +44,15 @@ class ExpenseCreateSchema(BaseModel):
     @classmethod
     def validate_date_format(cls, v: str) -> str:
         try:
-            datetime.strptime(v, "%Y-%m-%d")
+            parsed_date = datetime.strptime(v, "%Y-%m-%d")
         except ValueError as exc:
             raise ValueError("Date must be in YYYY-MM-DD format") from exc
+        
+        # Prevent future dates
+        now = datetime.now(timezone.utc)
+        if parsed_date.date() > now.date():
+            raise ValueError("Date cannot be in the future")
+            
         return v
 
     @field_validator("note", mode="before")

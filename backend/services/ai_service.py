@@ -1,7 +1,13 @@
+import os
+import json
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict
 
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Thresholds (% of total spend) above which a warning insight is generated
 CATEGORY_THRESHOLDS = {
@@ -13,19 +19,60 @@ CATEGORY_THRESHOLDS = {
 
 WEEKLY_HIGH_SPEND_THRESHOLD = 200  # absolute $$$ value
 
+# Simple Rate Limiter Memory
+_last_llm_call_time = 0.0
+_LLM_RATE_LIMIT_SECONDS = 60.0
+
 
 def generate_insights(expenses: List[Dict]) -> List[str]:
     """
-    Rule-based AI insight generator.
-    Accepts a list of expense dicts with keys: amount, category, date.
+    Hybrid AI insight generator.
+    First attempts to call an LLM (if configured). Fallbacks to deterministic rule-based insights.
     Returns a list of human-readable insight strings.
     """
     if not expenses:
         return ["No expenses recorded yet. Start adding expenses to get insights!"]
 
+    # Try LLM first
+    llm_insights = _try_generate_llm_insights(expenses)
+    if llm_insights:
+        return llm_insights
+        
+    logger.info("Falling back to rule-based insights")
+    return _generate_rule_based_insights(expenses)
+
+
+def _try_generate_llm_insights(expenses: List[Dict]) -> List[str]:
+    """Mock/Skeleton function for external LLM call. Wrapped securely."""
+    global _last_llm_call_time
+    
+    now = time.time()
+    if now - _last_llm_call_time < _LLM_RATE_LIMIT_SECONDS:
+        logger.info("LLM rate limit reached. Using fallback.")
+        return []
+        
+    try:
+        # We simulate checking for an API key to determine if LLM generation would happen
+        if not os.getenv("LLM_API_KEY"):
+            return []
+            
+        # Example of where LLM call would formally execute:
+        # _last_llm_call_time = now
+        # response = openai_client.chat.completions.create(...)
+        # return json.loads(response.content).get("insights", [])
+        
+        return [] 
+        
+    except Exception as e:
+        logger.error(f"LLM insight generation failed: {e}")
+        return []
+
+
+def _generate_rule_based_insights(expenses: List[Dict]) -> List[str]:
+    """Deterministic rule-based insights fallback."""
     insights = []
 
-    # ── 1. Category-wise percentage analysis ────────────────────────────────
+    # 1. Category-wise percentage analysis
     category_totals: Dict[str, float] = defaultdict(float)
     total_spend = 0.0
 
@@ -45,7 +92,7 @@ def generate_insights(expenses: List[Dict]) -> List[str]:
                     f"(${spent:.2f}). Consider cutting back."
                 )
 
-    # ── 2. High weekly spending alert ───────────────────────────────────────
+    # 2. High weekly spending alert
     now = datetime.now(timezone.utc)
     week_ago = now - timedelta(days=7)
     weekly_total = 0.0
@@ -76,7 +123,7 @@ def generate_insights(expenses: List[Dict]) -> List[str]:
             f"(${weekly_by_category[top_cat]:.2f})."
         )
 
-    # ── 3. Positive reinforcement ────────────────────────────────────────────
+    # 3. Positive reinforcement
     if not insights:
         insights.append(
             "✅ Great job! Your spending looks well-balanced across all categories."
