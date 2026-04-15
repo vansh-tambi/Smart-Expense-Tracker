@@ -19,7 +19,12 @@ def get_db():
     if _db is None:
         mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
         db_name = os.getenv("DB_NAME", "smart_expense_tracker")
-        _client = MongoClient(mongo_uri)
+        _client = MongoClient(
+            mongo_uri,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+            socketTimeoutMS=10000,
+        )
         _db = _client[db_name]
     return _db
 
