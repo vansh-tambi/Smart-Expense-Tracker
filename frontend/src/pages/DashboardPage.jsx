@@ -4,14 +4,16 @@ import AddExpenseForm from "../components/AddExpenseForm";
 import ExpenseList from "../components/ExpenseList";
 import CategorySummary from "../components/CategorySummary";
 import InsightsPanel from "../components/InsightsPanel";
+import { Wallet, TrendingUp, ReceiptText } from "lucide-react";
 
 export default function DashboardPage() {
-  const { expenses, summary, loading, error, addExpense, removeExpense } = useExpenses();
+  const { expenses, summary, loading, error, addExpense, removeExpense } =
+    useExpenses();
   const [insightsTrigger, setInsightsTrigger] = useState(0);
 
   const handleAdd = async (data) => {
     await addExpense(data);
-    setInsightsTrigger((n) => n + 1); // Trigger insights refresh after new expense
+    setInsightsTrigger((n) => n + 1);
   };
 
   const handleDelete = async (id) => {
@@ -19,28 +21,72 @@ export default function DashboardPage() {
     setInsightsTrigger((n) => n + 1);
   };
 
+  // Derived stats
+  const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
+  const categoryCount = new Set(expenses.map((e) => e.category)).size;
+
   return (
-    <div className="container">
+    <div className="app-shell">
       {/* Header */}
-      <header style={{ marginBottom: "2.5rem", textAlign: "center" }}>
-        <h1>💰 Smart Expense Tracker</h1>
-        <p className="subtitle">Track your spending. Understand your habits. Save smarter.</p>
+      <header className="app-header">
+        <h1>Expense Tracker</h1>
+        <p>Track spending, surface patterns, spend smarter.</p>
       </header>
 
-      {/* Main Grid */}
-      <div className="grid-dashboard">
-        {/* Left Column: list + add form */}
-        <div className="stack-group">
-          <ExpenseList
-            expenses={expenses}
-            loading={loading}
-            error={error}
-            onDelete={handleDelete}
-          />
+      {/* Summary stat cards */}
+      <div className="summary-row">
+        <div className="stat-card">
+          <div
+            className="stat-icon"
+            style={{ background: "rgba(79,142,247,0.12)" }}
+          >
+            <Wallet size={20} color="#4f8ef7" />
+          </div>
+          <div className="stat-content">
+            <span className="stat-value">${totalSpent.toFixed(2)}</span>
+            <span className="stat-label">Total Spent</span>
+          </div>
         </div>
 
-        {/* Right Column: form + summary + insights */}
-        <div className="stack-group">
+        <div className="stat-card">
+          <div
+            className="stat-icon"
+            style={{ background: "rgba(52,211,153,0.12)" }}
+          >
+            <TrendingUp size={20} color="#34d399" />
+          </div>
+          <div className="stat-content">
+            <span className="stat-value">{categoryCount}</span>
+            <span className="stat-label">Categories</span>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div
+            className="stat-icon"
+            style={{ background: "rgba(251,191,36,0.12)" }}
+          >
+            <ReceiptText size={20} color="#fbbf24" />
+          </div>
+          <div className="stat-content">
+            <span className="stat-value">{expenses.length}</span>
+            <span className="stat-label">Transactions</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="main-grid">
+        {/* Left: expense list */}
+        <ExpenseList
+          expenses={expenses}
+          loading={loading}
+          error={error}
+          onDelete={handleDelete}
+        />
+
+        {/* Right sidebar */}
+        <div className="right-col">
           <AddExpenseForm onAdd={handleAdd} />
           <CategorySummary summary={summary} />
           <InsightsPanel refreshTrigger={insightsTrigger} />

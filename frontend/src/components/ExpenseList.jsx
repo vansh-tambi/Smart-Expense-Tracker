@@ -2,23 +2,36 @@ import ExpenseItem from "./ExpenseItem";
 
 export default function ExpenseList({ expenses, loading, error, onDelete }) {
   return (
-    <div className="glass-panel" style={{ padding: "1.5rem" }}>
-      <h2>📋 All Expenses</h2>
-      {loading && (
-        <div className="text-center mt-4">
-          <div className="loader" />
+    <div className="card">
+      <div className="card-body">
+        <div className="expense-list-header">
+          <h2>Transactions</h2>
+          {expenses.length > 0 && (
+            <span className="expense-count">{expenses.length} items</span>
+          )}
         </div>
-      )}
-      {error && <p className="error-text">Failed to load expenses: {error}</p>}
-      {!loading && !error && expenses.length === 0 && (
-        <p style={{ color: "var(--text-secondary)", textAlign: "center", padding: "2rem 0" }}>
-          No expenses yet. Add your first one! 💸
-        </p>
-      )}
-      {!loading &&
-        expenses.map((expense) => (
-          <ExpenseItem key={expense.id} expense={expense} onDelete={onDelete} />
-        ))}
+
+        {loading && (
+          <div className="empty-state">
+            <div className="loader" />
+          </div>
+        )}
+
+        {error && <p className="msg-error">Failed to load: {error}</p>}
+
+        {!loading && !error && expenses.length === 0 && (
+          <div className="empty-state">No expenses yet. Add one to get started.</div>
+        )}
+
+        {!loading &&
+          expenses.map((expense) => (
+            <ExpenseItem
+              key={expense.id}
+              expense={expense}
+              onDelete={onDelete}
+            />
+          ))}
+      </div>
     </div>
   );
 }

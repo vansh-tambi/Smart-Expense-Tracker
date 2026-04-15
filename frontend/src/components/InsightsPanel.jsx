@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useInsights } from "../hooks/useInsights";
+import { RefreshCw, Sparkles } from "lucide-react";
 
 export default function InsightsPanel({ refreshTrigger }) {
   const { insights, loading, error, fetchInsights } = useInsights();
@@ -9,38 +10,53 @@ export default function InsightsPanel({ refreshTrigger }) {
   }, [refreshTrigger, fetchInsights]);
 
   return (
-    <div className="glass-panel" style={{ padding: "1.5rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <h2>🤖 AI Insights</h2>
-        <button
-          id="refresh-insights-btn"
-          onClick={fetchInsights}
-          disabled={loading}
-          style={{ padding: "0.4rem 0.9rem", fontSize: "0.85rem" }}
-        >
-          {loading ? "…" : "↻ Refresh"}
-        </button>
-      </div>
-
-      {loading && (
-        <div className="text-center mt-4">
-          <div className="loader" />
+    <div className="insights-card">
+      <div className="card-body">
+        <div className="insights-header">
+          <h2 style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <Sparkles size={14} color="var(--accent)" />
+            Insights
+          </h2>
+          <button
+            className="btn btn-ghost"
+            id="refresh-insights-btn"
+            onClick={fetchInsights}
+            disabled={loading}
+          >
+            <RefreshCw
+              size={13}
+              style={{
+                animation: loading ? "spin 0.7s linear infinite" : "none",
+              }}
+            />
+            {!loading && "Refresh"}
+          </button>
         </div>
-      )}
 
-      {error && <p className="error-text">Could not load insights: {error}</p>}
-
-      {!loading && !error && insights.length === 0 && (
-        <p style={{ color: "var(--text-secondary)" }}>No insights available yet.</p>
-      )}
-
-      {!loading &&
-        !error &&
-        insights.map((insight, i) => (
-          <div key={i} className="ai-insight">
-            <p style={{ fontSize: "0.95rem", lineHeight: "1.6" }}>{insight}</p>
+        {loading && (
+          <div className="empty-state">
+            <div className="loader" />
           </div>
-        ))}
+        )}
+
+        {error && <p className="msg-error">Could not load insights.</p>}
+
+        {!loading && !error && insights.length === 0 && (
+          <div className="empty-state">No insights yet.</div>
+        )}
+
+        {!loading &&
+          !error &&
+          insights.map((insight, i) => (
+            <div
+              key={i}
+              className="insight-item fade-in"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              {insight}
+            </div>
+          ))}
+      </div>
     </div>
   );
 }

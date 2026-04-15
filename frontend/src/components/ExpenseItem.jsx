@@ -1,25 +1,39 @@
+import { getCategoryMeta } from "./categoryMeta";
+import { Trash2 } from "lucide-react";
+
 export default function ExpenseItem({ expense, onDelete }) {
+  const meta = getCategoryMeta(expense.category);
+  const Icon = meta.icon;
+
   return (
-    <div className="expense-item">
-      <div className="expense-info">
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "0.4rem" }}>
-          <span className="badge">{expense.category}</span>
-          <span className="expense-title">{expense.note || "No note"}</span>
+    <div className="expense-row">
+      {/* Category icon */}
+      <div className="category-dot" style={{ background: meta.bg }}>
+        <Icon size={18} color={meta.color} strokeWidth={1.8} />
+      </div>
+
+      {/* Details */}
+      <div className="expense-details">
+        <div className="expense-note">{expense.note || expense.category}</div>
+        <div className="expense-sub">
+          {expense.category} · {expense.date}
         </div>
-        <span className="expense-meta">{expense.date}</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-        <span className="expense-amount">${parseFloat(expense.amount).toFixed(2)}</span>
-        <button
-          className="danger"
-          id={`delete-expense-${expense.id}`}
-          onClick={() => onDelete(expense.id)}
-          title="Delete expense"
-          style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem" }}
-        >
-          ✕
-        </button>
-      </div>
+
+      {/* Amount */}
+      <span className="expense-amount">
+        ${parseFloat(expense.amount).toFixed(2)}
+      </span>
+
+      {/* Delete — revealed on hover */}
+      <button
+        className="btn btn-danger-ghost"
+        id={`delete-expense-${expense.id}`}
+        onClick={() => onDelete(expense.id)}
+        title="Delete"
+      >
+        <Trash2 size={14} />
+      </button>
     </div>
   );
 }
