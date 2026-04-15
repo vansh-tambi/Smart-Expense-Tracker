@@ -14,12 +14,14 @@ VALID_CATEGORIES = [
     "Other",
 ]
 
+def _get_current_date():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 class ExpenseCreateSchema(BaseModel):
     amount: float = Field(..., gt=0, description="Amount must be greater than 0")
     category: str = Field(..., min_length=1, description="Category is required")
-    date: Optional[str] = None  # ISO date string, defaults to today
-    note: Optional[str] = Field("", max_length=500)
+    date: str = Field(default_factory=_get_current_date, description="ISO date string")
+    note: str = Field(default="", max_length=500)
 
     @field_validator("category")
     @classmethod
@@ -35,16 +37,16 @@ class ExpenseCreateSchema(BaseModel):
 
     @field_validator("date", mode="before")
     @classmethod
-    def set_default_date(cls, v):
-        if v is None or v == "":
-            return datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        return str(v).strip()
-
-    @field_validator("date")
-    @classmethod
-    def validate_date_format(cls, v: str) -> str:
+    def process_and_validate_date(cls, v):
+        if not v:
+            return _get_current_date()
+        v_str = str(v).strip()
+        
+        if len(v_str) != 10:
+            raise ValueError("Date must be exactly in YYYY-MM-DD format")
+        
         try:
-            parsed_date = datetime.strptime(v, "%Y-%m-%d")
+            parsed_date = datetime.strptime(v_str, "%Y-%m-%d")
         except ValueError as exc:
             raise ValueError("Date must be in YYYY-MM-DD format") from exc
         
@@ -53,7 +55,7 @@ class ExpenseCreateSchema(BaseModel):
         if parsed_date.date() > now.date():
             raise ValueError("Date cannot be in the future")
             
-        return v
+        return v_str
 
     @field_validator("note", mode="before")
     @classmethod

@@ -49,9 +49,9 @@ class TestGenerateInsights:
     def test_balanced_spending_insight(self):
         """Test positive insight when spending is balanced."""
         expenses = [
-            {"amount": 25.0, "category": "Food", "date": "2024-04-15"},
-            {"amount": 25.0, "category": "Transport", "date": "2024-04-15"},
-            {"amount": 25.0, "category": "Shopping", "date": "2024-04-15"},
+            {"amount": 35.0, "category": "Food", "date": "2024-04-15"},
+            {"amount": 20.0, "category": "Transport", "date": "2024-04-15"},
+            {"amount": 20.0, "category": "Shopping", "date": "2024-04-15"},
             {"amount": 25.0, "category": "Entertainment", "date": "2024-04-15"},
         ]
         
@@ -216,3 +216,50 @@ class TestGenerateInsights:
         insights = generate_insights(expenses)
         
         assert len(insights) > 0
+
+    def test_llm_generation_mocked(self, monkeypatch):
+        """Test that LLM generation returns structured output when successful."""
+        from services import ai_service
+        monkeypatch.setenv("LLM_API_KEY", "fake_key")
+        
+        def mock_llm_call(prompt):
+            import json
+            return json.dumps({"insights": ["Mocked LLM Insight"]})
+            
+        monkeypatch.setattr(ai_service, "_try_generate_llm_insights", mock_llm_call)
+        ai_service._last_llm_call = 0
+        
+        expenses = [{"amount": 50, "category": "Food", "date": "2024-04-15"}]
+        insights = generate_insights(expenses)
+        
+        assert len(insights) == 1
+        assert insights[0] == "Mocked LLM Insight"
+
+    def test_rate_limit_fallback(self, monkeypatch):
+        """Test that rate limiting forces a fallback to rule-based insights."""
+        from services import ai_service
+        import time
+        monkeypatch.setenv("LLM_API_KEY", "fake_key")
+        
+        ai_service._last_llm_call = time.time()
+        
+        expenses = [{"amount": 500, "category": "Food", "date": "2024-04-15"}]
+        insights = generate_insights(expenses)
+        
+        assert any("⚠️ You're spending" in ins for ins in insights)
+
+    def test_llm_failure_fallback(self, monkeypatch):
+        """Test that LLM failure forces a fallback to rule-based insights."""
+        from services import ai_service
+        monkeypatch.setenv("LLM_API_KEY", "fake_key")
+        
+        def mock_llm_fail(prompt):
+            raise Exception("LLM API Timeout")
+            
+        monkeypatch.setattr(ai_service, "_try_generate_llm_insights", mock_llm_fail)
+        ai_service._last_llm_call = 0
+        
+        expenses = [{"amount": 500, "category": "Food", "date": "2024-04-15"}]
+        insights = generate_insights(expenses)
+        
+        assert any("⚠️ You're spending" in ins for ins in insights)

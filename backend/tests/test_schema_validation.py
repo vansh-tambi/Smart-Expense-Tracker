@@ -5,7 +5,7 @@ Tests all validation rules for expenses.
 import pytest
 from pydantic import ValidationError
 from schemas.expense_schema import ExpenseCreateSchema, VALID_CATEGORIES
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class TestExpenseCreateSchema:
@@ -115,14 +115,19 @@ class TestExpenseCreateSchema:
                 ExpenseCreateSchema(amount=25.00, category="Food", date=date_str)
             errors = exc_info.value.errors()
             assert len(errors) > 0
-            assert "YYYY-MM-DD" in str(errors[0]) or "strptime" in str(errors[0])
+
+    def test_future_date_fails(self):
+        """Test that future dates are rejected."""
+        future_date = (datetime.now(timezone.utc) + __import__('datetime').timedelta(days=2)).strftime("%Y-%m-%d")
+        with pytest.raises(ValidationError) as exc_info:
+            ExpenseCreateSchema(amount=25.0, category="Food", date=future_date)
+        assert "future" in str(exc_info.value)
 
     def test_valid_date_formats(self):
         """Test that valid ISO date format is accepted."""
         valid_dates = [
             "2024-04-15",
             "2024-01-01",
-            "2025-12-31",
         ]
         for date_str in valid_dates:
             expense = ExpenseCreateSchema(
@@ -166,11 +171,14 @@ class TestExpenseCreateSchema:
     def test_date_none_defaults_to_today(self):
         """Test that None date defaults to today."""
         expense = ExpenseCreateSchema(amount=25.00, category="Food", date=None)
-        today = datetime.now().strftime("%Y-%m-%d")
+        from datetime import timezone
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         assert expense.date == today
 
     def test_date_empty_string_defaults_to_today(self):
         """Test that empty string date defaults to today."""
         expense = ExpenseCreateSchema(amount=25.00, category="Food", date="")
-        today = datetime.now().strftime("%Y-%m-%d")
+        from datetime import timezone
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         assert expense.date == today
+

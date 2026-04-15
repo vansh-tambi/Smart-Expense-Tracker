@@ -214,13 +214,14 @@ class TestGetCategorySummary:
         summary = expense_service.get_category_summary()
         
         # Should be sorted by total descending
+        # Transport = 100, Shopping = 50, Food = 40
         assert len(summary) == 3
         assert summary[0]["category"] == "Transport"
         assert summary[0]["total"] == 100.00
-        assert summary[1]["category"] == "Food"
-        assert summary[1]["total"] == 40.00
-        assert summary[2]["category"] == "Shopping"
-        assert summary[2]["total"] == 50.00
+        assert summary[1]["category"] == "Shopping"
+        assert summary[1]["total"] == 50.00
+        assert summary[2]["category"] == "Food"
+        assert summary[2]["total"] == 40.00
 
     def test_category_summary_aggregates_count(self):
         """Test that count is aggregated correctly."""

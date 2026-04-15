@@ -73,7 +73,7 @@ def _ensure_expenses_collection():
             validationAction="error",
         )
         logger.info("Created expenses collection with schema validator")
-    except (CollectionInvalid, TypeError, AttributeError) as e:
+    except (CollectionInvalid, TypeError, AttributeError, NotImplementedError) as e:
         # Collection already exists OR mongomock doesn't support validators
         try:
             db.command(
@@ -85,7 +85,7 @@ def _ensure_expenses_collection():
                 }
             )
             logger.info("Updated expenses collection validator")
-        except (OperationFailure, TypeError, AttributeError) as exc:
+        except (OperationFailure, TypeError, AttributeError, NotImplementedError) as exc:
             # mongomock and test environments may not support schema validation
             logger.warning("Could not set collection validator (OK for testing): %s", exc)
             # Still create the collection for testing

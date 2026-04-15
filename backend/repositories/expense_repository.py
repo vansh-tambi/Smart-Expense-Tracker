@@ -42,12 +42,15 @@ class ExpenseRepository:
                 "$project": {
                     "_id": 0,
                     "category": "$_id",
-                    "total": {"$round": ["$total", 2]},
+                    "total": 1,
                     "count": 1,
                 }
             },
         ]
-        return list(cls.get_collection().aggregate(pipeline))
+        results = list(cls.get_collection().aggregate(pipeline))
+        for r in results:
+            r["total"] = round(float(r["total"]), 2)
+        return results
 
     @classmethod
     def delete_by_id(cls, oid: ObjectId) -> Optional[Dict]:

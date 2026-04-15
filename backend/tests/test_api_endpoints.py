@@ -42,8 +42,9 @@ class TestAddExpenseEndpoint:
         assert response.status_code == 201
         data = response.get_json()
         assert data["success"] is True
-        # Date should default to today
-        today = datetime.now().strftime("%Y-%m-%d")
+        # Date should default to today UTC
+        from datetime import timezone
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         assert data["data"]["date"] == today
         assert data["data"]["note"] == ""
 
@@ -328,12 +329,15 @@ class TestSpendingInsightsEndpoint:
 
     def test_insights_balanced_spending(self, client, mock_mongo):
         """Test positive insight for balanced spending."""
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        test_date = (now - __import__('datetime').timedelta(days=10)).strftime("%Y-%m-%d") # outside 7 days for balanced test
         db = mock_mongo["test_smart_expense_tracker"]
         db.expenses.insert_many([
-            {"amount": 25.00, "category": "Food", "date": "2024-04-15", "note": "", "created_at": datetime.now()},
-            {"amount": 25.00, "category": "Transport", "date": "2024-04-15", "note": "", "created_at": datetime.now()},
-            {"amount": 25.00, "category": "Shopping", "date": "2024-04-15", "note": "", "created_at": datetime.now()},
-            {"amount": 25.00, "category": "Entertainment", "date": "2024-04-15", "note": "", "created_at": datetime.now()},
+            {"amount": 35.0, "category": "Food", "date": test_date, "note": "", "created_at": now},
+            {"amount": 20.0, "category": "Transport", "date": test_date, "note": "", "created_at": now},
+            {"amount": 20.0, "category": "Shopping", "date": test_date, "note": "", "created_at": now},
+            {"amount": 25.0, "category": "Entertainment", "date": test_date, "note": "", "created_at": now},
         ])
         
         response = client.get("/api/expenses/insights")

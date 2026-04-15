@@ -71,6 +71,7 @@ def _try_generate_llm_insights(expenses: List[Dict]) -> List[str]:
 def _generate_rule_based_insights(expenses: List[Dict]) -> List[str]:
     """Deterministic rule-based insights fallback."""
     insights = []
+    has_warning = False
 
     # 1. Category-wise percentage analysis
     category_totals: Dict[str, float] = defaultdict(float)
@@ -87,6 +88,7 @@ def _generate_rule_based_insights(expenses: List[Dict]) -> List[str]:
             pct = spent / total_spend
             threshold = CATEGORY_THRESHOLDS.get(cat, 0.40)
             if pct > threshold:
+                has_warning = True
                 insights.append(
                     f"⚠️ You're spending {pct:.0%} of your budget on {cat} "
                     f"(${spent:.2f}). Consider cutting back."
@@ -111,12 +113,13 @@ def _generate_rule_based_insights(expenses: List[Dict]) -> List[str]:
             weekly_by_category[expense.get("category", "Other")] += amt
 
     if weekly_total > WEEKLY_HIGH_SPEND_THRESHOLD:
+        has_warning = True
         insights.append(
             f"📈 You've spent ${weekly_total:.2f} in the last 7 days — "
             f"that's above your weekly target of ${WEEKLY_HIGH_SPEND_THRESHOLD}."
         )
 
-    if weekly_by_category:
+    if weekly_by_category and has_warning:
         top_cat = max(weekly_by_category, key=weekly_by_category.get)
         insights.append(
             f"🍽️ Your top spending category this week is {top_cat} "
@@ -124,7 +127,7 @@ def _generate_rule_based_insights(expenses: List[Dict]) -> List[str]:
         )
 
     # 3. Positive reinforcement
-    if not insights:
+    if not has_warning:
         insights.append(
             "✅ Great job! Your spending looks well-balanced across all categories."
         )
