@@ -24,6 +24,7 @@ class ExpenseCreateSchema(BaseModel):
     @field_validator("category")
     @classmethod
     def validate_category(cls, v: str) -> str:
+        v = v.strip()
         if v not in VALID_CATEGORIES:
             raise ValueError(
                 f"Category must be one of: {', '.join(VALID_CATEGORIES)}"
@@ -35,7 +36,23 @@ class ExpenseCreateSchema(BaseModel):
     def set_default_date(cls, v):
         if v is None or v == "":
             return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return str(v).strip()
+
+    @field_validator("date")
+    @classmethod
+    def validate_date_format(cls, v: str) -> str:
+        try:
+            datetime.strptime(v, "%Y-%m-%d")
+        except ValueError as exc:
+            raise ValueError("Date must be in YYYY-MM-DD format") from exc
         return v
+
+    @field_validator("note", mode="before")
+    @classmethod
+    def normalize_note(cls, v):
+        if v is None:
+            return ""
+        return str(v).strip()
 
 
 class ExpenseResponseSchema(BaseModel):

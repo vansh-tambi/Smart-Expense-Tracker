@@ -1,11 +1,17 @@
 import os
 from pymongo import MongoClient
+from pymongo.errors import CollectionInvalid, OperationFailure
 from dotenv import load_dotenv
+
+from utils.logger import get_logger
 
 load_dotenv()
 
+logger = get_logger(__name__)
+
 _client = None
 _db = None
+_collection_ready = False
 
 
 def get_db():
@@ -18,6 +24,75 @@ def get_db():
     return _db
 
 
+def _expense_collection_validator():
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["amount", "category", "date"],
+            "properties": {
+                "amount": {
+                    "bsonType": ["double", "int", "long", "decimal"],
+                    "minimum": 0.01,
+                    "description": "amount must be a positive number",
+                },
+                "category": {
+                    "bsonType": "string",
+                    "minLength": 1,
+                    "description": "category is required",
+                },
+                "date": {
+                    "bsonType": "string",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "description": "date must be ISO format (YYYY-MM-DD)",
+                },
+                "note": {
+                    "bsonType": "string",
+                },
+                "created_at": {
+                    "bsonType": "date",
+                },
+            },
+        }
+    }
+
+
+def _ensure_expenses_collection():
+    global _collection_ready
+    if _collection_ready:
+        return
+
+    db = get_db()
+    validator = _expense_collection_validator()
+
+    try:
+        db.create_collection(
+            "expenses",
+            validator=validator,
+            validationLevel="strict",
+            validationAction="error",
+        )
+        logger.info("Created expenses collection with schema validator")
+    except CollectionInvalid:
+        # Collection already exists. Apply validator via collMod.
+        try:
+            db.command(
+                {
+                    "collMod": "expenses",
+                    "validator": validator,
+                    "validationLevel": "strict",
+                    "validationAction": "error",
+                }
+            )
+            logger.info("Updated expenses collection validator")
+        except OperationFailure as exc:
+            logger.warning("Could not update collection validator: %s", exc)
+
+    db["expenses"].create_index("date")
+    db["expenses"].create_index("category")
+    _collection_ready = True
+
+
 def get_expenses_collection():
+    _ensure_expenses_collection()
     db = get_db()
     return db["expenses"]

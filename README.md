@@ -1,149 +1,140 @@
-# 💰 Smart Expense Tracker with AI Insights
+# Smart Expense Tracker with AI Insights
 
-A full-stack expense tracker built with **Python Flask**, **React**, and **MongoDB** — featuring rule-based AI spending insights, schema validation, and a premium dark glassmorphism UI.
+Full-stack expense tracker using Flask REST API, React (functional components + hooks), and MongoDB.
 
----
+## Folder Structure
 
-## 📁 Project Structure
-
-```
+```text
 Smart Expense Tracker/
-├── backend/
-│   ├── app.py                    # Flask app factory
-│   ├── .env                      # Environment variables
-│   ├── requirements.txt
-│   ├── models/
-│   │   └── db.py                 # MongoDB connection
-│   ├── schemas/
-│   │   └── expense_schema.py     # Pydantic validation
-│   ├── services/
-│   │   ├── expense_service.py    # Business logic
-│   │   └── ai_service.py        # AI insight generator
-│   ├── routes/
-│   │   └── expense_routes.py    # Blueprint (thin controllers)
-│   └── utils/
-│       ├── logger.py
-│       └── error_handlers.py
-│
-└── frontend/
-    └── src/
-        ├── api/
-        │   └── expensesApi.js
-        ├── hooks/
-        │   ├── useExpenses.js
-        │   └── useInsights.js
-        ├── components/
-        │   ├── AddExpenseForm.jsx
-        │   ├── ExpenseList.jsx
-        │   ├── ExpenseItem.jsx
-        │   ├── CategorySummary.jsx
-        │   └── InsightsPanel.jsx
-        ├── pages/
-        │   └── DashboardPage.jsx
-        ├── App.jsx
-        ├── main.jsx
-        └── index.css
+  backend/
+    app.py
+    requirements.txt
+    .env.example
+    models/
+      __init__.py
+      db.py
+    routes/
+      __init__.py
+      expense_routes.py
+    schemas/
+      __init__.py
+      expense_schema.py
+    services/
+      __init__.py
+      expense_service.py
+      ai_service.py
+    utils/
+      __init__.py
+      error_handlers.py
+      logger.py
+
+  frontend/
+    index.html
+    package.json
+    vite.config.js
+    .env.example
+    src/
+      main.jsx
+      App.jsx
+      index.css
+      api/
+        expensesApi.js
+      hooks/
+        useExpenses.js
+        useInsights.js
+      components/
+        AddExpenseForm.jsx
+        ExpenseItem.jsx
+        ExpenseList.jsx
+        CategorySummary.jsx
+        InsightsPanel.jsx
+      pages/
+        DashboardPage.jsx
 ```
 
----
+## Backend Design
 
-## 🚀 Setup & Running
+- routes: HTTP layer only (request/response)
+- services: business logic and AI insight logic
+- models: MongoDB connection and collection setup
+- schemas: request validation with Pydantic
+- utils: error handlers and logging
 
-### Prerequisites
+No business logic is placed in route handlers.
 
-- Python 3.9+  
-- Node.js 18+  
-- MongoDB running locally on port 27017
+## Core Features
 
----
+- Add expense (amount, category, date, note)
+- Get all expenses
+- Category-wise summary
+- AI-based spending insights
 
-### Backend
+## Validation and Database Rules
 
-```bash
+- Pydantic validation enforces:
+  - amount > 0
+  - category required and restricted to supported values
+  - date format YYYY-MM-DD
+- MongoDB collection validator on expenses enforces:
+  - amount minimum 0.01
+  - category required
+  - date required
+
+## API Endpoints
+
+- POST /api/expenses/
+- GET /api/expenses/
+- GET /api/expenses/summary
+- GET /api/expenses/insights
+- DELETE /api/expenses/<expense_id>
+- GET /api/health
+
+## Setup Instructions
+
+### 1. Start MongoDB
+
+Ensure MongoDB is running locally at mongodb://localhost:27017 (or use your own URI).
+
+### 2. Backend Setup (Flask)
+
+```powershell
 cd backend
-
-# Create & activate virtual environment
 python -m venv venv
-.\venv\Scripts\activate        # Windows
-# source venv/bin/activate     # macOS/Linux
-
-# Install dependencies
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
-# Configure environment (edit if needed)
-# MONGO_URI=mongodb://localhost:27017
-# DB_NAME=smart_expense_tracker
-
-# Start the server
+Copy-Item .env.example .env
 python app.py
 ```
 
-The API will be available at **http://localhost:5000**
+Backend runs on http://localhost:5000.
 
----
+### 3. Frontend Setup (React)
 
-### Frontend
-
-```bash
+```powershell
 cd frontend
 npm install
+Copy-Item .env.example .env
 npm run dev
 ```
 
-The UI will be available at **http://localhost:5173**
+Frontend runs on http://localhost:5173.
 
----
+Vite is configured to proxy /api to the Flask backend.
 
-## 📡 API Reference
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/expenses/` | Add a new expense |
-| `GET` | `/api/expenses/` | List all expenses |
-| `DELETE` | `/api/expenses/:id` | Delete an expense |
-| `GET` | `/api/expenses/summary` | Category-wise totals |
-| `GET` | `/api/expenses/insights` | AI spending insights |
-
-### Example: Add Expense
+## Example Request
 
 ```bash
 curl -X POST http://localhost:5000/api/expenses/ \
   -H "Content-Type: application/json" \
-  -d '{"amount": 25.50, "category": "Food", "note": "Lunch"}'
+  -d '{"amount":45.5,"category":"Food","date":"2026-04-15","note":"Lunch"}'
 ```
 
-### Valid Categories
+## AI Insight Behavior
 
-`Food` · `Transport` · `Shopping` · `Entertainment` · `Health` · `Utilities` · `Education` · `Other`
+The AI service currently uses a rule-based engine to generate insights, including alerts such as:
 
----
+- You are spending too much on food this week.
+- Weekly spending is above threshold.
+- Top category for the week.
 
-## 🤖 AI Insights
-
-Insights are rule-based and generated in `services/ai_service.py`. They include:
-
-- ⚠️ Category over-spend alerts (e.g. >35% of budget on Food)
-- 📈 Weekly high-spend warnings (>$200 in 7 days)
-- 🍽️ Top spending category of the week
-- ✅ Positive reinforcement when spending is balanced
-
-> **To integrate a real LLM** (e.g. Gemini/GPT), replace the logic inside `generate_insights()` in `ai_service.py` with an API call — the function signature and return type (`List[str]`) stay the same.
-
----
-
-## 🛡️ Validation Rules
-
-- `amount` — must be **> 0** (enforced by Pydantic)
-- `category` — **required**, must be one of the valid categories
-- `date` — optional, defaults to today's date (ISO format)
-
----
-
-## 🔧 Environment Variables (`backend/.env`)
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MONGO_URI` | `mongodb://localhost:27017` | MongoDB connection string |
-| `DB_NAME` | `smart_expense_tracker` | Database name |
-| `FLASK_PORT` | `5000` | Backend port |
-| `FLASK_ENV` | `development` | Flask environment |
+To switch to LLM-based insights later, replace logic in backend/services/ai_service.py while keeping the same service interface.

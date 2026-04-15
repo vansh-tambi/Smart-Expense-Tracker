@@ -11,14 +11,19 @@ logger = get_logger(__name__)
 
 def _serialize(doc: Dict) -> Dict:
     """Convert a MongoDB document to a JSON-serializable dict."""
-    doc["id"] = str(doc.pop("_id"))
-    return doc
+    serialized = {**doc, "id": str(doc["_id"])}
+    serialized.pop("_id", None)
+    created_at = serialized.get("created_at")
+    if isinstance(created_at, datetime):
+        serialized["created_at"] = created_at.isoformat()
+    return serialized
 
 
 def create_expense(data: Dict) -> Dict:
     """Validate and insert a new expense document."""
     schema = ExpenseCreateSchema(**data)
     doc = schema.model_dump()
+    doc["created_at"] = datetime.now(timezone.utc)
     collection = get_expenses_collection()
     result = collection.insert_one(doc)
     doc["_id"] = result.inserted_id
@@ -29,7 +34,7 @@ def create_expense(data: Dict) -> Dict:
 def get_all_expenses() -> List[Dict]:
     """Return all expenses sorted by date descending."""
     collection = get_expenses_collection()
-    expenses = list(collection.find().sort("date", -1))
+    expenses = list(collection.find().sort([("date", -1), ("created_at", -1)]))
     return [_serialize(e) for e in expenses]
 
 

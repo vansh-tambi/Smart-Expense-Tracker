@@ -3,3 +3,6 @@ flask-cors==4.0.1
 pymongo==4.7.2
 pydantic==2.7.1
 python-dotenv==1.0.1
+pytest==7.4.4
+pytest-cov==4.1.0
+mongomock==4.1.2

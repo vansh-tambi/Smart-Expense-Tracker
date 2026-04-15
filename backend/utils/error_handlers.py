@@ -11,16 +11,16 @@ def register_error_handlers(app):
     @app.errorhandler(400)
     def bad_request(e):
         logger.warning(f"400 Bad Request: {e}")
-        return jsonify({"error": "Bad request", "message": str(e)}), 400
+        return jsonify({"error": "Bad request"}), 400
 
     @app.errorhandler(404)
     def not_found(e):
-        return jsonify({"error": "Not found", "message": str(e)}), 404
+        return jsonify({"error": "Not found"}), 404
 
     @app.errorhandler(500)
     def internal_error(e):
         logger.error(f"500 Internal Server Error: {e}")
-        return jsonify({"error": "Internal server error", "message": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(e):
@@ -38,3 +38,8 @@ def register_error_handlers(app):
             ),
             400,
         )
+
+    @app.errorhandler(Exception)
+    def unhandled_exception(e):
+        logger.error(f"Unhandled exception: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500

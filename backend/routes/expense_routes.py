@@ -36,7 +36,7 @@ def add_expense():
         )
     except Exception as e:
         logger.error(f"Unexpected error on add_expense: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error", "message": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @expense_bp.route("/", methods=["GET"])
@@ -47,7 +47,7 @@ def list_expenses():
         return jsonify({"success": True, "data": expenses, "count": len(expenses)}), 200
     except Exception as e:
         logger.error(f"Unexpected error on list_expenses: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error", "message": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @expense_bp.route("/summary", methods=["GET"])
@@ -58,7 +58,7 @@ def category_summary():
         return jsonify({"success": True, "data": summary}), 200
     except Exception as e:
         logger.error(f"Unexpected error on category_summary: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error", "message": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @expense_bp.route("/insights", methods=["GET"])
@@ -70,7 +70,7 @@ def spending_insights():
         return jsonify({"success": True, "insights": insights}), 200
     except Exception as e:
         logger.error(f"Unexpected error on spending_insights: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error", "message": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @expense_bp.route("/<expense_id>", methods=["DELETE"])
@@ -83,4 +83,4 @@ def remove_expense(expense_id: str):
         return jsonify({"success": True, "data": deleted}), 200
     except Exception as e:
         logger.error(f"Unexpected error on remove_expense: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error", "message": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
