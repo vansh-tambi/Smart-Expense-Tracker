@@ -34,9 +34,12 @@ def generate_insights(expenses: List[Dict]) -> List[str]:
         return ["No expenses recorded yet. Start adding expenses to get insights!"]
 
     # Try LLM first
-    llm_insights = _try_generate_llm_insights(expenses)
-    if llm_insights:
-        return llm_insights
+    try:
+        llm_insights = _try_generate_llm_insights(expenses)
+        if llm_insights:
+            return llm_insights
+    except Exception as e:
+        logger.error("LLM Generation unexpected error: %s", e)
         
     logger.info("Falling back to rule-based insights")
     return _generate_rule_based_insights(expenses)

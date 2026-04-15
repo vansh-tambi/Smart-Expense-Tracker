@@ -223,11 +223,10 @@ class TestGenerateInsights:
         monkeypatch.setenv("LLM_API_KEY", "fake_key")
         
         def mock_llm_call(prompt):
-            import json
-            return json.dumps({"insights": ["Mocked LLM Insight"]})
+            return ["Mocked LLM Insight"]
             
         monkeypatch.setattr(ai_service, "_try_generate_llm_insights", mock_llm_call)
-        ai_service._last_llm_call = 0
+        ai_service._last_llm_call_time = 0
         
         expenses = [{"amount": 50, "category": "Food", "date": "2024-04-15"}]
         insights = generate_insights(expenses)
@@ -241,7 +240,7 @@ class TestGenerateInsights:
         import time
         monkeypatch.setenv("LLM_API_KEY", "fake_key")
         
-        ai_service._last_llm_call = time.time()
+        ai_service._last_llm_call_time = time.time()
         
         expenses = [{"amount": 500, "category": "Food", "date": "2024-04-15"}]
         insights = generate_insights(expenses)
@@ -257,7 +256,7 @@ class TestGenerateInsights:
             raise Exception("LLM API Timeout")
             
         monkeypatch.setattr(ai_service, "_try_generate_llm_insights", mock_llm_fail)
-        ai_service._last_llm_call = 0
+        ai_service._last_llm_call_time = 0
         
         expenses = [{"amount": 500, "category": "Food", "date": "2024-04-15"}]
         insights = generate_insights(expenses)
