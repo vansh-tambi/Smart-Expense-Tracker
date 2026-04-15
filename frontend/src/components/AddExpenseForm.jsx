@@ -110,9 +110,9 @@ export default function AddExpenseForm({ onAdd }) {
             />
           </div>
 
-          {error && <p className="msg-error">{error}</p>}
+          {error && <p className="msg-error slide-up">{error}</p>}
           {success && (
-            <p className="msg-success">
+            <p className="msg-success toast-success">
               <Check size={14} /> Added
             </p>
           )}
@@ -125,7 +125,7 @@ export default function AddExpenseForm({ onAdd }) {
             style={{ width: "100%", marginTop: "0.35rem" }}
           >
             {submitting ? (
-              "Adding…"
+              <span className="ai-pulse">Adding…</span>
             ) : (
               <>
                 <Plus size={16} /> Add Expense

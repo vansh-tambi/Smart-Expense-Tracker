@@ -20,15 +20,16 @@ export default function ExpenseList({ expenses, loading, error, onDelete }) {
         {error && <p className="msg-error">Failed to load: {error}</p>}
 
         {!loading && !error && expenses.length === 0 && (
-          <div className="empty-state">No expenses yet. Add one to get started.</div>
+          <div className="empty-state slide-up">No expenses yet. Add one to get started.</div>
         )}
 
         {!loading &&
-          expenses.map((expense) => (
+          expenses.map((expense, i) => (
             <ExpenseItem
               key={expense.id}
               expense={expense}
               onDelete={onDelete}
+              index={i}
             />
           ))}
       </div>

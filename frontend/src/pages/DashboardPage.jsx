@@ -35,7 +35,7 @@ export default function DashboardPage() {
 
       {/* Summary stat cards */}
       <div className="summary-row">
-        <div className="stat-card">
+        <div className="stat-card slide-up" style={{ animationDelay: '0ms' }}>
           <div
             className="stat-icon"
             style={{ background: "rgba(79,142,247,0.12)" }}
@@ -48,7 +48,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card slide-up" style={{ animationDelay: '100ms' }}>
           <div
             className="stat-icon"
             style={{ background: "rgba(52,211,153,0.12)" }}
@@ -61,7 +61,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card slide-up" style={{ animationDelay: '200ms' }}>
           <div
             className="stat-icon"
             style={{ background: "rgba(251,191,36,0.12)" }}
