@@ -77,19 +77,23 @@ export default function DashboardPage() {
 
       {/* Main content */}
       <div className="main-grid">
-        {/* Left: expense list */}
-        <ExpenseList
-          expenses={expenses}
-          loading={loading}
-          error={error}
-          onDelete={handleDelete}
-        />
+        {/* Left: expense list & below cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <ExpenseList
+            expenses={expenses}
+            loading={loading}
+            error={error}
+            onDelete={handleDelete}
+          />
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1.5rem' }}>
+            <CategorySummary summary={summary} />
+            <InsightsPanel refreshTrigger={insightsTrigger} />
+          </div>
+        </div>
 
         {/* Right sidebar */}
         <div className="right-col">
           <AddExpenseForm onAdd={handleAdd} />
-          <CategorySummary summary={summary} />
-          <InsightsPanel refreshTrigger={insightsTrigger} />
         </div>
       </div>
     </div>

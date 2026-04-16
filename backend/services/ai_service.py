@@ -46,7 +46,7 @@ def generate_insights(expenses: List[Dict]) -> List[str]:
 
 
 def _try_generate_llm_insights(expenses: List[Dict]) -> List[str]:
-    """Mock/Skeleton function for external LLM call. Wrapped securely."""
+    """Actual LLM insight generation using Gemini API."""
     global _last_llm_call_time
     
     now = time.time()
@@ -55,15 +55,50 @@ def _try_generate_llm_insights(expenses: List[Dict]) -> List[str]:
         return []
         
     try:
-        # We simulate checking for an API key to determine if LLM generation would happen
-        if not os.getenv("LLM_API_KEY"):
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
             return []
             
-        # Example of where LLM call would formally execute:
-        # _last_llm_call_time = now
-        # response = openai_client.chat.completions.create(...)
-        # return json.loads(response.content).get("insights", [])
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
         
+        _last_llm_call_time = now
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        if not expenses:
+            return []
+            
+        expenses_text = "\\n".join([f"- {e.get('date', 'Unknown')}: {e.get('category', 'Other')} ${e.get('amount', 0)}" for e in expenses])
+        
+        prompt = f"""
+        You are a smart financial advisor. Here is a list of recent expenses.
+        
+        {expenses_text}
+        
+        Please provide exactly 3 short, insightful, and actionable financial tips or observations based on this spending data.
+        Use emojis. Keep it concise (1 sentence per tip).
+        Format your response as a JSON array of strings, like this:
+        ["tip 1", "tip 2", "tip 3"]
+        
+        Only output the JSON array. Do not wrap it in markdown. Do not provide any other text.
+        """
+        
+        response = model.generate_content(prompt)
+        content = response.text.strip()
+        
+        if content.startswith("```"):
+            content = "\\n".join(content.split("\\n")[1:-1])
+            if content.endswith("```"):
+                content = content[:-3]
+            
+        import json
+        try:
+            insights = json.loads(content)
+            if isinstance(insights, list) and len(insights) > 0:
+                return insights
+        except json.JSONDecodeError:
+            logger.warning(f"Failed to parse LLM JSON output: {content}")
+            
         return [] 
         
     except Exception as e:

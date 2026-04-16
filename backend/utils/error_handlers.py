@@ -1,5 +1,6 @@
 from flask import jsonify, g, has_request_context
 from pydantic import ValidationError
+from pymongo.errors import PyMongoError
 
 from utils.logger import get_logger
 
@@ -31,6 +32,11 @@ def register_error_handlers(app):
     def not_found(e):
         logger.warning(f"404 Not Found: {e}")
         return build_error_response("Not found", 404)
+        
+    @app.errorhandler(PyMongoError)
+    def handle_database_error(e):
+        logger.error(f"Database connection or operation failed: {e}", exc_info=True)
+        return build_error_response("Database service unavailable. Please check your connection or try again later.", 503)
 
     @app.errorhandler(500)
     def internal_error(e):
